@@ -13,12 +13,27 @@ const inputElevation = document.querySelector('.form__input--elevation');
 
 // Get users loacation
 if (navigator.geolocation) {
+    // check if users browser support Geolocation API & fetch user location
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const { latitude, longitude } = position.coords;
-            console.log(
-                `https://www.google.com/maps/@${latitude},${longitude}`
-            );
+            const coords = [latitude, longitude];
+
+            // Leaflet JS library - Map
+            const map = L.map('map').setView(coords, 13);
+
+            L.tileLayer(
+                'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+                {
+                    attribution:
+                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                }
+            ).addTo(map);
+
+            L.marker(coords)
+                .addTo(map)
+                .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+                .openPopup();
         },
         () => {
             alert(`Could not fetch user's location`);
