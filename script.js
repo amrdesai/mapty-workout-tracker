@@ -10,69 +10,141 @@ const inputDistance = document.querySelector('.form__input--distance');
 const inputDuration = document.querySelector('.form__input--duration');
 const inputCadence = document.querySelector('.form__input--cadence');
 const inputElevation = document.querySelector('.form__input--elevation');
-let map, mapEvent;
 
-// Get users loacation
-if (navigator.geolocation) {
-    // check if users browser support Geolocation API & fetch user location
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const { latitude, longitude } = position.coords;
-            const coords = [latitude, longitude];
+// Workout Class
+class Workout {
+    date = new Date();
+    // ID
+    id = (Date.now() + '').slice(-10);
 
-            // Leaflet JS library - Map
-            map = L.map('map').setView(coords, 13);
-
-            // Map as per current location
-            L.tileLayer(
-                'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
-                {
-                    attribution:
-                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                }
-            ).addTo(map);
-
-            // Click Event to add a new workout
-            map.on('click', (mapEv) => {
-                mapEvent = mapEv;
-                form.classList.remove('hidden');
-                inputDistance.focus();
-            });
-        },
-        () => {
-            alert(`Could not fetch user's location`);
-        }
-    );
+    constructor(coords, distance, duration) {
+        this.coords = coords; // [lat, long]
+        this.distance = distance; // in kms
+        this.duration = duration; // in min
+    }
 }
 
-// Event Listeners //
-// Event Listener: Form submit event
-form.addEventListener('submit', (e) => {
-    e.preventDefault();
+// Child classes: Running
+class Running extends Workout {
+    constructor(coords, distance, duration, cadence) {
+        super(coords, distance, duration);
+        this.cadence = cadence;
+        this.calcPace();
+    }
 
-    // Clear input fields
-    inputDistance.value = inputDuration.value = inputCadence.value = inputElevation.value =
-        '';
+    // Calculate page
+    calcPace() {
+        // min/km
+        this.pace = this.duration / this.distance;
+        return this.pace;
+    }
+}
 
-    // Display marker
-    const { lat, lng } = mapEvent.latlng;
-    L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(
-            L.popup({
-                maxWidth: 250,
-                minWidth: 100,
-                autoClose: false,
-                closeOnClick: false,
-                className: 'running-popup',
-            })
-        )
-        .setPopupContent('Workout')
-        .openPopup();
-});
+// Child classes: Cycling
+class Cycling extends Workout {
+    constructor(coords, distance, duration, elevationGain) {
+        super(coords, distance, duration);
+        this.elevationGain = elevationGain;
+        this.calcSpeed();
+    }
 
-// Event Listener: Workout type change event
-inputType.addEventListener('change', (e) => {
-    inputElevation.closest('.form__row').classList.toggle('form__row--hidden');
-    inputCadence.closest('.form__row').classList.toggle('form__row--hidden');
-});
+    // Calc speed
+    calcSpeed() {
+        this.speed = this.distance / (this.duration / 60);
+        return this.speed;
+    }
+}
+
+// App
+class App {
+    #map;
+    #mapEvent;
+
+    constructor() {
+        this._getPosition();
+
+        // ---------------------- //
+        // // Event Listeners // //
+        // ---------------------- //
+        // Event Listener: Form submit event
+        form.addEventListener('submit', this._newWorkout.bind(this));
+
+        // Event Listener: Workout type change event
+        inputType.addEventListener('change', this._toggleElevationField);
+    }
+
+    // Get users loacation
+    _getPosition() {
+        // check if users browser support Geolocation API & fetch user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                this._loadMap.bind(this),
+                () => {
+                    alert(`Could not fetch user's location!`);
+                }
+            );
+        }
+    }
+
+    // Load Map
+    _loadMap(position) {
+        const { latitude, longitude } = position.coords;
+        const coords = [latitude, longitude];
+
+        // Leaflet JS library - Map
+        this.#map = L.map('map').setView(coords, 13);
+
+        // Map as per current location
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        }).addTo(this.#map);
+
+        // Click Event to add a new workout
+        this.#map.on('click', this._showForm.bind(this));
+    }
+
+    // Show form
+    _showForm(mapEv) {
+        this.#mapEvent = mapEv;
+        form.classList.remove('hidden');
+        inputDistance.focus();
+    }
+
+    _toggleElevationField() {
+        inputElevation
+            .closest('.form__row')
+            .classList.toggle('form__row--hidden');
+        inputCadence
+            .closest('.form__row')
+            .classList.toggle('form__row--hidden');
+    }
+
+    // New workout
+    _newWorkout(e) {
+        e.preventDefault();
+
+        // Clear input fields
+        inputDistance.value = inputDuration.value = inputCadence.value = inputElevation.value =
+            '';
+
+        // Display marker
+        const { lat, lng } = this.#mapEvent.latlng;
+        L.marker([lat, lng])
+            .addTo(this.#map)
+            .bindPopup(
+                L.popup({
+                    maxWidth: 250,
+                    minWidth: 100,
+                    autoClose: false,
+                    closeOnClick: false,
+                    className: 'running-popup',
+                })
+            )
+            .setPopupContent('Workout')
+            .openPopup();
+    }
+}
+
+// Init App
+const app = new App();
