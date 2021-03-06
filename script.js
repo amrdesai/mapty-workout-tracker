@@ -82,6 +82,7 @@ class App {
     #map;
     #mapEvent;
     #workouts = [];
+    #zoomLevel = 13;
 
     constructor() {
         this._getPosition();
@@ -93,6 +94,12 @@ class App {
 
         // Event Listener: Workout type change event
         inputType.addEventListener('change', this._toggleElevationField);
+
+        // Event Listener: Click on Workout item from the list
+        containerWorkouts.addEventListener(
+            'click',
+            this._moveToPopup.bind(this)
+        );
     }
 
     // ------- //
@@ -117,7 +124,7 @@ class App {
         const coords = [latitude, longitude];
 
         // Leaflet JS library - Map
-        this.#map = L.map('map').setView(coords, 13);
+        this.#map = L.map('map').setView(coords, this.#zoomLevel);
 
         // Map as per current location
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -291,6 +298,22 @@ class App {
         }
 
         formEl.insertAdjacentHTML('afterend', html);
+    }
+
+    // Move to location in map
+    _moveToPopup(e) {
+        const workoutEl = e.target.closest('.workout');
+        // Guard clause
+        if (!workoutEl) return;
+        // Get workout data
+        const workout = this.#workouts.find(
+            (workout) => workout.id === workoutEl.dataset.id
+        );
+        // Set workout to center in map
+        this.#map.setView(workout.coords, this.#zoomLevel, {
+            animate: true,
+            pan: { duration: 1 },
+        });
     }
 }
 
