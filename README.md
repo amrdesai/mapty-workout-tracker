@@ -9,6 +9,6 @@
 - App generates map and displays it to UI using [Leaflet JS Library](https://leafletjs.com/).
 
 # How to use 
-- Click on map to select location 
+- Click on map to select location
 - Enter details 
 - Workout will display on the map
