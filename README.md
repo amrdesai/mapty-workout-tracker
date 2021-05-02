@@ -10,5 +10,5 @@
 
 # How to use 
 - Click on map to select location.
-- Enter details
+- Enter details.
 - Workout will display on the map 
